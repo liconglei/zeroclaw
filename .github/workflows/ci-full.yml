@@ -51,7 +51,7 @@ jobs:
           fi
           cargo build --release --locked --target ${{ matrix.target }}
 
-       - name: Prepare Artifact
+      - name: Prepare Artifact
         shell: bash
         run: |
           # 1. 创建存放文件的目录
@@ -81,7 +81,7 @@ jobs:
             echo "ARTIFACT_NAME=${OUT_NAME}" >> $GITHUB_ENV
           fi
 
-       - name: Upload Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           # 使用动态名称，例如：zeroclaw-x86_64-pc-windows-msvc.exe
