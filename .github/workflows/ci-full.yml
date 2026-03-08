@@ -82,6 +82,7 @@ jobs:
           platforms: linux/amd64
           push: false
           provenance: false
+          tags: lcl/zeroclaw:1.8.0-matrix
           build-args: |
             CARGO_FEATURES=channel-matrix
           outputs: type=docker,dest=/tmp/zeroclaw-amd64.tar
