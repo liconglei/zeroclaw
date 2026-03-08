@@ -63,3 +63,38 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}
           path: upload_dir/*
           retention-days: 5
+
+  docker:
+    name: Docker amd64
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          provenance: false
+          tags: lcl/zeroclaw:latest
+          build-args: |
+            CARGO_FEATURES=channel-matrix
+          outputs: type=docker,dest=/tmp/zeroclaw-amd64.tar
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,mode=max,scope=amd64
+
+      - name: Compress image
+        run: gzip /tmp/zeroclaw-amd64.tar
+
+      - name: Upload Docker image
+        uses: actions/upload-artifact@v4
+        with:
+          name: zeroclaw-docker-amd64.tar.gz
+          path: /tmp/zeroclaw-amd64.tar.gz
+          retention-days: 5
