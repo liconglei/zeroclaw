@@ -19,15 +19,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            cross_compiler: gcc-aarch64-linux-gnu
-            linker_env: CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER
-            linker: aarch64-linux-gnu-gcc
-          - os: macos-15-intel
-            target: x86_64-apple-darwin
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -49,4 +44,57 @@ jobs:
           if [ -n "${{ matrix.linker_env || '' }}" ] && [ -n "${{ matrix.linker || '' }}" ]; then
             export "${{ matrix.linker_env }}=${{ matrix.linker }}"
           fi
-          cargo build --release --locked --target ${{ matrix.target }}
+          cargo build --release --locked --target ${{ matrix.target }} --features channel-matrix
+
+      - name: Prepare Artifact
+        shell: bash
+        run: |
+          mkdir -p upload_dir
+
+          BIN_PATH="target/${{ matrix.target }}/release/zeroclaw.exe"
+          OUT_NAME="zeroclaw-${{ matrix.target }}.exe"
+
+          cp "$BIN_PATH" "upload_dir/$OUT_NAME"
+          echo "ARTIFACT_NAME=${OUT_NAME}" >> $GITHUB_ENV
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: upload_dir/*
+          retention-days: 5
+
+  docker:
+    name: Docker amd64
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          provenance: false
+          tags: lcl/zeroclaw:1.8.0-matrix
+          build-args: |
+            CARGO_FEATURES=channel-matrix
+          outputs: type=docker,dest=/tmp/zeroclaw-amd64.tar
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,mode=max,scope=amd64
+
+      - name: Compress image
+        run: gzip /tmp/zeroclaw-amd64.tar
+
+      - name: Upload Docker image
+        uses: actions/upload-artifact@v4
+        with:
+          name: zeroclaw-docker-amd64.tar.gz
+          path: /tmp/zeroclaw-amd64.tar.gz
+          retention-days: 5
