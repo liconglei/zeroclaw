@@ -44,7 +44,7 @@ jobs:
           if [ -n "${{ matrix.linker_env || '' }}" ] && [ -n "${{ matrix.linker || '' }}" ]; then
             export "${{ matrix.linker_env }}=${{ matrix.linker }}"
           fi
-          cargo build --release --locked --target ${{ matrix.target }}
+          cargo build --release --locked --target ${{ matrix.target }} --features channel-matrix
 
       - name: Prepare Artifact
         shell: bash
@@ -82,6 +82,8 @@ jobs:
           platforms: linux/amd64
           push: false
           provenance: false
+          build-args: |
+            CARGO_FEATURES=channel-matrix
           outputs: type=docker,dest=/tmp/zeroclaw-amd64.tar
           cache-from: type=gha,scope=amd64
           cache-to: type=gha,mode=max,scope=amd64
