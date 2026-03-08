@@ -81,7 +81,7 @@ jobs:
             echo "ARTIFACT_NAME=${OUT_NAME}" >> $GITHUB_ENV
           fi
 
-      - name: Upload Artifact
+       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           # 使用动态名称，例如：zeroclaw-x86_64-pc-windows-msvc.exe
